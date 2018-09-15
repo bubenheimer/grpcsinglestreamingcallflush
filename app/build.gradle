@@ -1,0 +1,65 @@
+repositories {
+    google()
+}
+
+apply plugin: 'com.android.application'
+apply plugin: 'com.google.protobuf'
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        applicationId 'org.bubenheimer.grpcsinglestreamingcallflush'
+        minSdkVersion 17
+        targetSdkVersion 28
+        versionName '1.0'
+        versionCode 1
+    }
+    buildTypes {
+        debug {
+            minifyEnabled false
+            useProguard false
+            shrinkResources false
+        }
+        release {
+        }
+    }
+    compileOptions {
+        sourceCompatibility rootProject.ext.javaVersion
+        targetCompatibility rootProject.ext.javaVersion
+    }
+}
+
+dependencies {
+    implementation 'javax.annotation:javax.annotation-api:1.3.2'
+
+    implementation "io.grpc:grpc-android:$grpcVersion"
+    implementation "io.grpc:grpc-okhttp:$grpcVersion"
+    implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
+    implementation "io.grpc:grpc-stub:$grpcVersion"
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:$protocVersion"
+    }
+    plugins {
+        javalite {
+            artifact = "com.google.protobuf:protoc-gen-javalite:3.0.0"
+        }
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                javalite {}
+                grpc {
+                    // Options added to --grpc_out
+                    option 'lite'
+                }
+            }
+        }
+    }
+}

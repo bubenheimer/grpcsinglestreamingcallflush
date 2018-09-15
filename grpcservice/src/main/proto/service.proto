@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "org.bubenheimer.grpctest";
+option java_outer_classname = "GRPCTestProto";
+
+package grpctest;
+
+message Item {
+    string value = 1;
+}
+
+service StreamData {
+    rpc StreamData (stream Item) returns (stream Item);
+}
