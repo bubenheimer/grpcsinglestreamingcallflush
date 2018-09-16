@@ -7,7 +7,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="1:1"
+        android:text="Stream"
         android:onClick="on11ButtonClick"
         />
 </FrameLayout>

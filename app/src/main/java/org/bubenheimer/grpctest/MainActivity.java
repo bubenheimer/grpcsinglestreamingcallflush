@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import java.util.concurrent.CountDownLatch;
+
 import io.grpc.ManagedChannel;
 import io.grpc.android.AndroidChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -39,7 +41,7 @@ public class MainActivity extends Activity {
 
         new Thread(() -> {
             final StreamDataGrpc.StreamDataStub stub = StreamDataGrpc.newStub(channel);
-
+            final CountDownLatch latch = new CountDownLatch(1);
             final StreamObserver<Item> streamObserver = stub.streamData(
                     new StreamObserver<Item>() {
                         private int counter = 0;
@@ -53,11 +55,13 @@ public class MainActivity extends Activity {
                         @Override
                         public void onError(final Throwable t) {
                             Log.w(TAG, t);
+                            latch.countDown();
                         }
 
                         @Override
                         public void onCompleted() {
                             Log.i(TAG, "Call completed after " + counter + " Items");
+                            latch.countDown();
                         }
                     });
 
@@ -66,6 +70,14 @@ public class MainActivity extends Activity {
             }
 
             streamObserver.onCompleted();
+
+            try {
+                latch.await();
+            } catch (final InterruptedException e) {
+                Log.w(TAG, "Interrupted while waiting for stream completion", e);
+            }
+
+            Log.i(TAG, "Call finished");
 
             runOnUiThread(() -> view.setEnabled(true));
         }).start();
