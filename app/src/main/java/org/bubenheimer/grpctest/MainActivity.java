@@ -10,7 +10,8 @@ import java.util.concurrent.CountDownLatch;
 import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.android.AndroidChannelBuilder;
-import io.grpc.stub.StreamObserver;
+import io.grpc.stub.ClientCallStreamObserver;
+import io.grpc.stub.ClientResponseObserver;
 
 public class MainActivity extends Activity {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -50,16 +51,33 @@ public class MainActivity extends Activity {
         view.setEnabled(false);
 
         new Thread(() -> {
-            final StreamDataGrpc.StreamDataStub stub = StreamDataGrpc.newStub(channel);
             final CountDownLatch latch = new CountDownLatch(1);
-            final StreamObserver<Item> streamObserver = stub.streamData(
-                    new StreamObserver<Item>() {
-                        private int counter = 0;
 
+            //noinspection ResultOfMethodCallIgnored
+            StreamDataGrpc.newStub(channel).streamData(
+                    new ClientResponseObserver<Item, Item>() {
+                        private int outCounter = 0;
+                        private int inCounter = 0;
+
+                        @Override
+                        public void beforeStart(
+                                final ClientCallStreamObserver<Item> requestStream) {
+                            requestStream.setOnReadyHandler(() -> {
+                                while (requestStream.isReady()) {
+                                    final Item item = Item.newBuilder()
+                                            .setValue(Integer.toString(outCounter++)).build();
+                                    requestStream.onNext(item);
+                                    if (outCounter == 50_000) {
+                                        requestStream.onCompleted();
+                                        break;
+                                    }
+                                }
+                            });
+                        }
                         @Override
                         public void onNext(final Item value) {
                             // Safe even from multiple threads as called in a synchronized fashion
-                            ++counter;
+                            ++inCounter;
                         }
 
                         @Override
@@ -70,16 +88,10 @@ public class MainActivity extends Activity {
 
                         @Override
                         public void onCompleted() {
-                            Log.i(TAG, "Call completed after " + counter + " Items");
+                            Log.i(TAG, "Call completed after " + inCounter + " Items");
                             latch.countDown();
                         }
                     });
-
-            for (int i = 0; i < 100_000; ++i) {
-                streamObserver.onNext(Item.newBuilder().setValue(Integer.toString(i)).build());
-            }
-
-            streamObserver.onCompleted();
 
             try {
                 latch.await();
