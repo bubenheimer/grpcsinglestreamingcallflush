@@ -9,8 +9,6 @@ import io.grpc.ServerBuilder;
 import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.ChannelOption;
 
-//TODO workaround: direct executor lets RuntimeExceptions pass through the call stack: https://github.com/grpc/grpc-java/issues/636
-//TODO consider enabling compression at some point
 public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class.getName());
 
@@ -20,7 +18,6 @@ public class Main {
     private Main(final int port) {
         this.port = port;
         server = NettyServerBuilder.forPort(port)
-//                .withChildOption(ChannelOption.TCP_NODELAY, false)
                 .addService(new StreamData())
                 .build();
     }

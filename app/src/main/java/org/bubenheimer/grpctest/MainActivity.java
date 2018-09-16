@@ -7,6 +7,7 @@ import android.view.View;
 
 import java.util.concurrent.CountDownLatch;
 
+import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.android.AndroidChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -27,6 +28,15 @@ public class MainActivity extends Activity {
                 .usePlaintext()
                 .context(getApplicationContext())
                 .build();
+
+        new Runnable() {
+            @Override
+            public void run() {
+                final ConnectivityState state = channel.getState(false);
+                channel.notifyWhenStateChanged(state, this);
+                Log.d(TAG, "Changed channel state: " + state);
+            }
+        }.run();
     }
 
     @Override
@@ -65,7 +75,7 @@ public class MainActivity extends Activity {
                         }
                     });
 
-            for (int i = 0; i < 10_000; ++i) {
+            for (int i = 0; i < 100_000; ++i) {
                 streamObserver.onNext(Item.newBuilder().setValue(Integer.toString(i)).build());
             }
 
